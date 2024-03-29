@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="C:/Users/mahak/projects/wine-market-analysis/DB/vivino.db" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="2462"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><current_table name="4,9:maincountries"/><default_encoding codec=""/><browse_table_settings/></tab_browse><tab_sql><sql name="SQL 1">select name from wines order by ratings_count desc, ratings_average DESC limit 10
+
+
+SELECT distinct w.name
+    FROM vintage_toplists_rankings vtr 
+    JOIN vintages v ON vtr.vintage_id = v.id 
+    JOIN wines w ON v.wine_id = w.id 
+    WHERE vtr.rank = 1 
+        AND vtr.previous_rank = 1 
+    ORDER BY vtr.rank , w.ratings_average DESC 
+    LIMIT 10;
+	
+--Normalize the average rating to a common scale, usually between 0 and 1 (ratings_average/max rating value) 
+--Multiply the normalized average rating by the number of ratings. This gives more weight to products with both high ratings and a large number of ratings.
+-- Sort the products based on their weighted score, with higher scores indicating better products.
+select name, round((ratings_average/5)*ratings_count,1) as weighted_score , ratings_average , ratings_count from wines order by 2 desc
+</sql><sql name="SQL 2">WITH max_values AS (
+    SELECT 
+        MAX(users_count) AS max_users,
+        MAX(regions_count) AS max_regions,
+        MAX(wines_count) AS max_wines,
+        MAX(wineries_count) AS max_wineries 
+    FROM 
+        countries
+)
+SELECT 
+    name,
+    ((regions_count / max_regions) * 0.4) + 
+    ((users_count / max_users) * 0.1) +
+    ((wines_count / max_wines) * 0.2) +
+    ((wineries_count / max_wineries) * 0.3) AS priority_score
+FROM 
+    countries, 
+    max_values 
+ORDER BY 
+    priority_score DESC;
+</sql><current_tab id="1"/></tab_sql></sqlb_project>
